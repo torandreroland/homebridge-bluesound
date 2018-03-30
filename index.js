@@ -16,10 +16,10 @@ var xml2js = require("xml2js");
 	    // url info
 		this.ip 		= config["ip"];
 		this.port 		= config["port"];
-		this.play_url 		= this.ip + ":" + this.port + "/Play";        
+		this.play_url 		= this.ip + ":" + this.port + "/Play";
         	this.play_body          = config["play_body"];
 
-        	this.stop_url 		= this.ip + ":" + this.port + "/Pause";        
+        	this.stop_url 		= this.ip + ":" + this.port + "/Pause";
 		this.stop_body          = config["stop_body"];
 
 		this.status_url 	= this.ip + ":" + this.port + "/Status"			//config["status_url"];
@@ -31,7 +31,7 @@ var xml2js = require("xml2js");
 		this.username           = config["username"] 	  	 	 	|| "";
 		this.password           = config["password"] 	  	 	 	|| "";
 		this.sendimmediately    = config["sendimmediately"] 	 	|| "";
-		this.service            = "Light";						//config["service"] || "Switch";
+		this.service            = "Switch";						//config["service"] || "Light";
 		this.name               = config["name"];
 		this.volumeHandling     = "Yes";						//config["volumeHandling"] || "no";
 		this.switchHandling 	= config["switchHandling"] 		 	|| "no";
@@ -40,7 +40,7 @@ var xml2js = require("xml2js");
 		this.state = false;
 		this.currentlevel = 0;
 		var that = this;
-		
+
 		// Status Polling, if you want to add additional services that don't use switch handling you can add something like this || (this.service=="Smoke" || this.service=="Motion"))
 		if (this.status_url && this.switchHandling =="realtime") {
 			var powerurl = this.status_url;
@@ -49,7 +49,7 @@ var xml2js = require("xml2js");
             		if (error) {
                 		that.log('HTTP get power function failed: %s', error.message);
 		                callback(error);
-            		} else {               				    
+            		} else {
 						done(null, body);
             		}
         		})
@@ -58,13 +58,13 @@ var xml2js = require("xml2js");
 
 		if (this.syncstatus_url){
 			var sync_url = this.syncstatus_url;
-			
+
 			that.httpRequest(sync_url, "", "GET", that.username, that.password, that.sendimmediately, function(error, response, body) {
 				if (error) {
 					that.log("HTTP SyncStatys function failed: %s", error.message);
 					calback(error);
 				} else {
-					
+
 					that.log("Getting Device information");
 					var xml = response.body;
 					var parser = new xml2js.Parser();
@@ -75,25 +75,25 @@ var xml2js = require("xml2js");
 						that.log("Device brand: " + this.brand);
 						that.log("Device model: " + this.model);
 						that.log("Device model no: "+ this.modelNo);
-						
+
 					});
 				}
 			});
-		};		
+		};
 
-		statusemitter.on("statuspoll", function(data) {       
-        	
+		statusemitter.on("statuspoll", function(data) {
+
 		var stringState = "";
 		var parser = new xml2js.Parser();
 		var xml = data;
-		
+
 		parser.parseString(xml, function(err, result){
-			
+
 			stringState = result["status"]["state"];
-			
+
 		});
 
-		if (stringState == "play" || straingState == "stream") {
+		if (stringState == "play" || stringState == "stream") {
 			//that.log("Current stringState: " + stringState);
 			//that.log("State is Play or Stream");
 			binaryState = 1;
@@ -102,7 +102,7 @@ var xml2js = require("xml2js");
 			//that.log("State is Pause or Connecting");
 			binaryState = 0;
 		};
-		
+
 	    	that.state = binaryState > 0;
 			that.log(that.service, "received power",that.status_url, "state is currently", binaryState);
 			if (that.lightbulbService) {
@@ -120,20 +120,20 @@ var xml2js = require("xml2js");
             		if (error) {
                 			that.log('HTTP get power function failed: %s', error.message);
 							return;
-            		} else {               				    
+            		} else {
 						done(null, responseBody);
             		}
         		}) // set longer polling as slider takes longer to set value
     	}, {longpolling:true,interval:2000,longpollEventName:"levelpoll"});
 
-		levelemitter.on("levelpoll", function(data) {  
+		levelemitter.on("levelpoll", function(data) {
 			that.currentlevel = parseInt(data);
 
-			if (that.lightbulbService) {				
-				that.log(that.service, "received volume",that.volumelvl_url, "level is currently", that.currentlevel); 		        
+			if (that.lightbulbService) {
+				that.log(that.service, "received volume",that.volumelvl_url, "level is currently", that.currentlevel);
 				that.lightbulbService.getCharacteristic(Characteristic.Brightness)
 				.setValue(that.currentlevel);
-			}        
+			}
     	});
 	}
 	}
@@ -160,13 +160,13 @@ var xml2js = require("xml2js");
 	setPowerState: function(powerOn, callback) {
 		var url;
 		var body;
-		
+
 		if (!this.play_url || !this.stop_url) {
 				this.log.warn("Ignoring request; No power url defined. Play_Url: " + this.play_url + " , Stop_Url: " + this.stop_url + " .");
 				callback(new Error("No power url defined."));
 				return;
 		}
-		
+
 		if (powerOn) {
 			url = this.play_url;
 			body = this.play_body;
@@ -176,7 +176,7 @@ var xml2js = require("xml2js");
 			body = this.stop_body;
 			this.log("Setting state to Pause");
 		}
-		
+
 		this.httpRequest(url, body, this.http_method, this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
 			if (error) {
 			this.log('HTTP set power function failed: %s', error.message);
@@ -187,17 +187,17 @@ var xml2js = require("xml2js");
 			}
 		}.bind(this));
 	},
-  
+
   getPowerState: function(callback) {
 	if (!this.status_url) {
 		this.log.warn("Ignoring request; No status url defined.");
 		callback(new Error("No status url defined."));
 		return;
 	}
-	
+
 	var url = this.status_url;
 	this.log("Getting power state");
-	
+
 	this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
 	if (error) {
 		this.log('HTTP get power function failed: %s', error.message);
@@ -225,15 +225,15 @@ var xml2js = require("xml2js");
 			this.log.warn("Ignoring request; No volume level url defined.");
 			callback(new Error("No volume level url defined."));
 			return;
-		}		
+		}
 			var url = this.volumelvl_url;
 			this.log("Getting volume level from url:" + url );
-	
+
 			this.httpRequest(url, "", "GET", this.username, this.password, this.sendimmediately, function(error, response, responseBody) {
 			if (error) {
 				this.log('HTTP get volume function failed: %s', error.message);
 				callback(error);
-			} else {			
+			} else {
 				//var binaryState = parseInt(responseBody);
 				var binaryState = 0;
 				var parser = new xml2js.Parser();
@@ -244,7 +244,7 @@ var xml2js = require("xml2js");
 				});
 
 				var level = binaryState;
-				
+
 				this.log("Current Volume is %s", binaryState);
 				callback(null, level);
 			}
@@ -252,17 +252,17 @@ var xml2js = require("xml2js");
 	  },
 
 	setVolume: function(level, callback) {
-		
+
 		if (!this.volume_url) {
 			this.log.warn("Ignoring request; No volume url defined.");
 			callback(new Error("No volume url defined."));
 			return;
-		}    
-	
+		}
+
 		var url = this.volume_url.replace("%b", level)
-	
+
 		this.log("Setting volume to %s", level);
-	
+
 		this.httpRequest(url, "", this.http_volume_method, this.username, this.password, this.sendimmediately, function(error, response, body) {
 		if (error) {
 			this.log('HTTP volume function failed: %s', error);
@@ -280,21 +280,21 @@ var xml2js = require("xml2js");
 	},
 
 	getServices: function() {
-		
+
 		var that = this;
 
 		// you can OPTIONALLY create an information service if you wish to override
 		// the default values for things like serial number, model, etc.
 		var informationService = new Service.AccessoryInformation();
-		
+
 		informationService
 		.setCharacteristic(Characteristic.Manufacturer, "Bluesound")
 		.setCharacteristic(Characteristic.Model, "Bluesound Model")
 		.setCharacteristic(Characteristic.SerialNumber, "Bluesound Model No");
 
 		switch (this.service) {
-		case "Light":	
-			this.lightbulbService = new Service.Lightbulb(this.name);			
+		case "Light":
+			this.lightbulbService = new Service.Lightbulb(this.name);
 			switch (this.switchHandling) {
 			//Power Polling
 			case "yes" :
@@ -309,27 +309,51 @@ var xml2js = require("xml2js");
 				.on('get', function(callback) {callback(null, that.state)})
 				.on('set', this.setPowerState.bind(this));
 				break;
-			default:		
+			default:
 				this.lightbulbService
-				.getCharacteristic(Characteristic.On)	
+				.getCharacteristic(Characteristic.On)
 				.on('set', this.setPowerState.bind(this));
 				break;
 			}
-			// volume Polling 
+			// volume Polling
 			if (this.volumeHandling == "realtime") {
-				this.lightbulbService 
+				this.lightbulbService
 				.addCharacteristic(new Characteristic.Brightness())
 				.on('get', function(callback) {callback(null, that.currentlevel)})
 				.on('set', this.setVolume.bind(this));
-			} else if (this.volumeHandling == "yes") {
+			}
+			else if (this.volumeHandling == "yes") {
 				this.lightbulbService
 				.addCharacteristic(new Characteristic.Brightness())
 				.on('get', this.getVolume.bind(this))
-				.on('set', this.setVolume.bind(this));							
+				.on('set', this.setVolume.bind(this));
 			}
-	
 			return [informationService, this.lightbulbService];
-			break;		
+			break;
+		case "Switch":
+			this.switchService = new Service.Switch(this.name);
+			switch (this.switchHandling) {
+				//Power Polling
+				case "yes":
+					this.switchService
+					.getCharacteristic(Characteristic.On)
+					.on('get', this.getPowerState.bind(this))
+					.on('set', this.setPowerState.bind(this));
+					break;
+				case "realtime":
+					this.switchService
+					.getCharacteristic(Characteristic.On)
+					.on('get', function(callback) {callback(null, that.state)})
+					.on('set', this.setPowerState.bind(this));
+					break;
+				default	:
+					this.switchService
+					.getCharacteristic(Characteristic.On)
+					.on('set', this.setPowerState.bind(this));
+					break;
+				}
+			return [informationService, this.switchService];
+			break;
 		}
 	}
 };
